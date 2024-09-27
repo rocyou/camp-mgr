@@ -1,0 +1,28 @@
+Name: camp-mgr
+Host: 0.0.0.0
+Port: 10001
+Timeout: 120000
+
+Mysql:
+  Addr: 127.0.0.1:3306
+  DSN: root:123456@tcp(127.0.0.1:3306)/camp?&parseTime=true&charset=utf8mb4
+  Active: 64
+  Idle: 64
+  IdleTimeout: 4h
+  QueryTimeout: 5s
+  ExecTimeout: 5s
+  TranTimeout: 5s
+
+SyncClient:
+  Topic:   "Sync-T"
+  Brokers:
+    - 127.0.0.1:9092
+
+SendClient:
+  Topics:
+    - "Sync-T"
+  Brokers:
+    - 127.0.0.1:9092
+  Group: "Msg-Consumer-G"
+
+MsgTableShardingSize: 8
