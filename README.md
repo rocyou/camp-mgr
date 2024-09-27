@@ -12,7 +12,7 @@ This project is a scalable messaging campaign management system designed to hand
 - [Configuration](#Configuration)
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
-- [Tolist](#todolist)
+- [Todolist](#todolist)
 
 
 
@@ -108,7 +108,7 @@ todo
     }
     ```
 
-## Tolist
+## Todolist
 1. Unit test code 
 2. Support API document, eg. go-swagger
 3. Consumer Support for Cluster Deployment
