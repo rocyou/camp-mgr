@@ -13,6 +13,7 @@ type SyncMsg struct {
 	Name        string `json:"name"`
 	Phone       string `json:"phone"`
 	MessageData string `json:"message_data"`
+	LastMessage bool   `json:"last_message"`
 }
 
 type DefaultSyncMsgClient struct {

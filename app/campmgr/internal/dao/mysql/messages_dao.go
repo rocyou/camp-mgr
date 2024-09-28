@@ -9,6 +9,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var _ *sql.Result
@@ -88,7 +89,11 @@ func (dao *MessageDAO) BatchUpdateById(ctx context.Context, tableName string, do
 	args := []interface{}{commonSendAt}
 	var rResult sql.Result
 
-	// Update records where status = 1
+	/*
+		UPDATE messages
+		SET send_at = ?, status = 1
+		WHERE id IN (?, ?, ?, ?);
+	*/
 	if len(idsStatus1) > 0 {
 		queryStatus1 := fmt.Sprintf("UPDATE %s SET send_at = ?, status = 1 WHERE id IN (%s)", tableName, strings.Join(idsStatus1, ", "))
 		for _, do := range doList {
@@ -107,7 +112,11 @@ func (dao *MessageDAO) BatchUpdateById(ctx context.Context, tableName string, do
 		rowsAffected += affected
 	}
 
-	// Update records where status = 2
+	/*
+		UPDATE messages
+		SET send_at = ?, status = 2
+		WHERE id IN (?, ?, ?, ?);
+	*/
 	if len(idsStatus2) > 0 {
 		args = []interface{}{commonSendAt}
 		queryStatus2 := fmt.Sprintf("UPDATE %s SET send_at = ?, status = 2 WHERE id IN (%s)", tableName, strings.Join(idsStatus2, ", "))
@@ -128,6 +137,63 @@ func (dao *MessageDAO) BatchUpdateById(ctx context.Context, tableName string, do
 	}
 
 	return
+}
+
+func (dao *MessageDAO) BatchUpdateByIdV2(ctx context.Context, db *sqlx.DB, tableName string, doList []*dataobject.Message) (err error) {
+	if len(doList) == 0 {
+		return
+	}
+
+	tR := sqlx.TxWrapper(ctx, db, func(tx *sqlx.Tx, result *sqlx.StoreResult) {
+		// Create temporary table
+		_, result.Err = db.Exec(ctx, "CREATE TEMPORARY TABLE temp_table (id BIGINT, send_at BIGINT, status INT);")
+		if result.Err != nil {
+			return
+		}
+
+		//// Batch insert data
+		//queryInsert := "INSERT INTO temp_table (id, send_at, status) VALUES (?, ?, ?)"
+		//for _, data := range doList {
+		//	sendAtTime := time.Now().Unix()
+		//	_, result.Err = db.Exec(ctx, queryInsert, data.Id, sendAtTime, data.Status)
+		//	if result.Err != nil {
+		//		return
+		//	}
+		//}
+
+		// INSERT INTO temp_table (id, send_at, status) VALUES (1, 1727533161, 2), (2, 1727533161, 1) ...
+		var values []string
+		var args []interface{}
+
+		for _, data := range doList {
+			sendAtTime := time.Now().Unix()
+			values = append(values, "(?, ?, ?)")
+			args = append(args, data.Id, sendAtTime, data.Status)
+		}
+
+		queryInsert := fmt.Sprintf("INSERT INTO temp_table (id, send_at, status) VALUES %s", strings.Join(values, ", "))
+		_, result.Err = db.Exec(ctx, queryInsert, args...)
+		if result.Err != nil {
+			return
+		}
+
+		/* UPDATE messages_xx m
+		   JOIN temp_table t ON m.id = t.id
+		   SET m.send_at = t.send_at, m.status = t.status;
+		*/
+		_, result.Err = db.Exec(ctx, fmt.Sprintf("UPDATE %s m JOIN temp_table t ON m.id = t.id SET m.send_at = t.send_at, m.status = t.status;", tableName))
+		if result.Err != nil {
+			return
+		}
+
+		// DROP TEMPORARY TABLE temp_table;
+		_, result.Err = db.Exec(ctx, "DROP TEMPORARY TABLE temp_table;")
+		if result.Err != nil {
+			return
+		}
+	})
+
+	return tR.Err
 }
 
 func (dao *MessageDAO) SelectListByCampaignId(ctx context.Context, campaignId, sharding int64) (rList []dataobject.Message, err error) {

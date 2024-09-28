@@ -39,7 +39,7 @@ func (s *Server) Initialize() error {
 	s.httpSrv = http.New(svcCtx, c.RestConf)
 
 	if *consumerMode {
-		s.mq = msgsender.NewConsumer(svcCtx, c.SendClient)
+		s.mq = msgsender.NewConsumerV2(svcCtx, c.SendClient)
 		go func() {
 			s.mq.Start()
 		}()
