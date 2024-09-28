@@ -57,16 +57,20 @@ func (s *DefaultJobClient) AddCampaignJob(campaignId, scheduleTime int64) (err e
 		}
 
 		// Do we need to rate-limit message production to Kafka here?
-		for _, msg := range messages {
-			s.syncCli.SyncMessage(s.ctx, msg.CampaignId, &msgsyncer.SyncMsg{
+		for index, msg := range messages {
+			msg1 := &msgsyncer.SyncMsg{
 				Id:          msg.Id,
 				CampaignId:  msg.CampaignId,
 				Name:        msg.Name,
 				Phone:       msg.Phone,
 				MessageData: msg.MessageData,
-			})
+			}
+			//mark as last message for consumer patch process use
+			if index == len(messages)-1 {
+				msg1.LastMessage = true
+			}
+			s.syncCli.SyncMessage(s.ctx, msg1.CampaignId, msg1)
 		}
-
 		s.RemoveCampaignJob(campaignId) // Remove the job after execution
 	})
 
