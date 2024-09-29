@@ -49,28 +49,35 @@ Make sure the following tools are installed:
     brew install mysql
     brew services start mysql
     ```
-2. Install and start kafka:
+2. Install, start and config kafka:
     ```bash
     brew install kafka
-    brew services start kafka   
-
-3. Install mysql scripts:
+    brew services start kafka
+3. Config kafka:
+     ```bash
+     kafka-topics --create --topic Sync-Msg-T --bootstrap-server 127.0.0.1:9092 --partitions 2 --replication-factor 1
+     #kafka-topics --list --bootstrap-server 127.0.0.1:9092
+     #kafka-topics --describe --topic Sync-Msg-T --bootstrap-server 127.0.0.1:9092
+     #kafka-consumer-groups --describe --group Msg-Consumer-G --bootstrap-server 127.0.0.1:9092
+     #kafka-topics --alter --topic Sync-T --bootstrap-server 127.0.0.1:9092 --partitions 4
+     #kafka-consumer-groups --describe --group Msg-Consumer-G --bootstrap-server 127.0.0.1:9092
+4. Install mysql scripts:
     ```bash
     cd camp-mgr/app/deploy
     ./install_camp_db.sh
     ```
    
-4. Install dependencies:
+5. Install dependencies:
     ```bash
     go mod tidy
     ```   
 
-5. Run the service as a producer only:
+6. Run the service as a producer only:
     ```bash
     cd /camp-mgr/app/campmgr/cmd
     go run main.go -c ../etc/campmgr.yaml
     ```
-6. Run the service as producer and consumer:
+7. Run the service as producer and consumer:
     ```bash
     cd /camp-mgr/app/campmgr/cmd
     go run main.go -c ../etc/campmgr.yaml -w
@@ -80,10 +87,40 @@ The service will be running at `http://localhost:10001`.
 
 ## Configuration
 
-Refer to camp-mgr/app/campmgr/etc/campmgr.yaml
+```yaml
+Name: camp-mgr                # Service name
+Host: 0.0.0.0                # Listen on all IP addresses
+Port: 10001                   # Service port
+Timeout: 120000               # Request timeout (milliseconds)
+
+Mysql:                        # MySQL configuration
+   Addr: 127.0.0.1:3306       # MySQL address and port
+   DSN: root:123456@tcp(127.0.0.1:3306)/camp?&parseTime=true&charset=utf8mb4  # Data source name
+   Active: 64                  # Maximum active connections
+   Idle: 64                    # Maximum idle connections
+   IdleTimeout: 4h            # Idle connection timeout
+   QueryTimeout: 5s           # Query timeout
+   ExecTimeout: 5s            # Execution timeout
+   TranTimeout: 5s            # Transaction timeout
+
+SyncClient:                  # Sync client configuration
+   Topic:   "Sync-T"          # Kafka topic to send messages
+   Brokers:                   # List of Kafka broker addresses
+      - 127.0.0.1:9092
+
+SendClient:                  # Send client configuration
+   Topics:                    # List of Kafka topics to send messages
+      - "Sync-Msg-T"
+   Brokers:                   # List of Kafka broker addresses
+      - 127.0.0.1:9092
+   Group: "Msg-Consumer-G"    # Consumer group name
+
+MsgTableShardingSize: 8     # Message table sharding size
+```
 
 ## API Documentation
-todo
+//todo
+
 ### Example
 
 #### Create campaign
@@ -111,8 +148,7 @@ todo
 ## Todolist
 1. Unit test code 
 2. Support API document, eg. go-swagger
-3. Consumer Support for Cluster Deployment
-4. Optimize MySQL queries for better efficiency
-5. Use memory pools to optimize frequent memory allocations
-6. Use a goroutine pool to optimize frequent task starts
+3. Optimize MySQL queries for better efficiency
+4. Use memory pools to optimize frequent memory allocations
+5. Use a goroutine pool to optimize frequent task starts
 

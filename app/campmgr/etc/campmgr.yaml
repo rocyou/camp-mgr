@@ -20,7 +20,7 @@ SyncClient:
 
 SendClient:
   Topics:
-    - "Sync-T"
+    - "Sync-Msg-T"
   Brokers:
     - 127.0.0.1:9092
   Group: "Msg-Consumer-G"
