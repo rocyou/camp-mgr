@@ -37,10 +37,10 @@ func writeRecipientsToCSV(filename string, contacts []recipient) error {
 
 // 生成联系人信息
 func generateContacts() []recipient {
-	contacts := make([]recipient, 100)
+	contacts := make([]recipient, 10000)
 	basePhone := 13961467500
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		contacts[i] = recipient{
 			name:        "user" + strconv.Itoa(i+1),
 			phoneNumber: strconv.FormatInt(int64(basePhone+i), 10), // 手机号依次递增

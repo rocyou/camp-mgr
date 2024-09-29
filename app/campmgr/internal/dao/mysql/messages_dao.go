@@ -143,10 +143,11 @@ func (dao *MessageDAO) BatchUpdateByIdV2(ctx context.Context, db *sqlx.DB, table
 	if len(doList) == 0 {
 		return
 	}
+	logx.Infof("BatchUpdateByIdV2 begin, campaignId: %d, tableName:%s", doList[0].CampaignId, tableName)
 
 	tR := sqlx.TxWrapper(ctx, db, func(tx *sqlx.Tx, result *sqlx.StoreResult) {
 		// Create temporary table
-		_, result.Err = db.Exec(ctx, "CREATE TEMPORARY TABLE temp_table (id BIGINT, send_at BIGINT, status INT);")
+		_, result.Err = db.Exec(ctx, "CREATE TEMPORARY TABLE temp_table (id BIGINT PRIMARY KEY, send_at BIGINT, status INT);")
 		if result.Err != nil {
 			return
 		}
@@ -192,6 +193,7 @@ func (dao *MessageDAO) BatchUpdateByIdV2(ctx context.Context, db *sqlx.DB, table
 			return
 		}
 	})
+	logx.Infof("BatchUpdateByIdV2 end, campaignId: %d, tableName:%s", doList[0].CampaignId, tableName)
 
 	return tR.Err
 }

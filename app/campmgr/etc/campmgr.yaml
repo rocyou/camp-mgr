@@ -14,7 +14,7 @@ Mysql:
   TranTimeout: 5s
 
 SyncClient:
-  Topic:   "Sync-T"
+  Topic:   "Sync-Msg-T"
   Brokers:
     - 127.0.0.1:9092
 
