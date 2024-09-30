@@ -89,33 +89,33 @@ The service will be running at `http://localhost:10001`.
 
 ```yaml
 Name: camp-mgr                # Service name
-Host: 0.0.0.0                # Listen on all IP addresses
+Host: 0.0.0.0                 # Listen on all IP addresses
 Port: 10001                   # Service port
 Timeout: 120000               # Request timeout (milliseconds)
 
 Mysql:                        # MySQL configuration
    Addr: 127.0.0.1:3306       # MySQL address and port
    DSN: root:123456@tcp(127.0.0.1:3306)/camp?&parseTime=true&charset=utf8mb4  # Data source name
-   Active: 64                  # Maximum active connections
-   Idle: 64                    # Maximum idle connections
+   Active: 64                 # Maximum active connections
+   Idle: 64                   # Maximum idle connections
    IdleTimeout: 4h            # Idle connection timeout
    QueryTimeout: 5s           # Query timeout
    ExecTimeout: 5s            # Execution timeout
    TranTimeout: 5s            # Transaction timeout
 
-SyncClient:                  # Sync client configuration
-   Topic:   "Sync-T"          # Kafka topic to send messages
+SyncClient:                   # Sync client configuration
+   Topic:   "Sync-Msg-T"      # Kafka topic to send messages
    Brokers:                   # List of Kafka broker addresses
       - 127.0.0.1:9092
 
-SendClient:                  # Send client configuration
+SendClient:                   # Send client configuration
    Topics:                    # List of Kafka topics to send messages
       - "Sync-Msg-T"
    Brokers:                   # List of Kafka broker addresses
       - 127.0.0.1:9092
    Group: "Msg-Consumer-G"    # Consumer group name
 
-MsgTableShardingSize: 8     # Message table sharding size
+MsgTableShardingSize: 8       # Message table sharding size
 ```
 
 ## API Documentation
