@@ -110,7 +110,7 @@ func NewConsumerV2(svcCtx *svc.ServiceContext, conf kafka.KafkaConsumerConf) *ka
 								logx.Errorf("update send result in db: %+v", err)
 							}
 						}
-					}(msgList, 1000) // Process 50 messages per batch
+					}(msgList, 1000) // Process 1000 messages per batch
 				}
 			}
 		})

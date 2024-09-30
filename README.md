@@ -144,6 +144,7 @@ MsgTableShardingSize: 8       # Message table sharding size
     "msg": "success"
     }
     ```
+![img.png](img.png)
 
 ## Todolist
 1. Unit test code 
