@@ -58,9 +58,6 @@ func NewConsumerV2(svcCtx *svc.ServiceContext, conf kafka.KafkaConsumerConf) *ka
 					}
 					// then patch process this campaign in one go routine
 					go func(msgList []*msgsyncer.SyncMsg, batchSize int) {
-						var wg sync.WaitGroup
-						sendResult := make(chan *dataobject.Message, len(msgList))
-
 						// Split msgList into batches based on the batch size
 						for i := 0; i < len(msgList); i += batchSize {
 							end := i + batchSize
@@ -68,6 +65,8 @@ func NewConsumerV2(svcCtx *svc.ServiceContext, conf kafka.KafkaConsumerConf) *ka
 								end = len(msgList)
 							}
 
+							var wg sync.WaitGroup
+							sendResult := make(chan *dataobject.Message, len(msgList))
 							// Process each batch of messages
 							batch := msgList[i:end]
 							for _, m := range batch {
@@ -96,31 +95,22 @@ func NewConsumerV2(svcCtx *svc.ServiceContext, conf kafka.KafkaConsumerConf) *ka
 							}
 							// Wait for all messages in the current batch to be processed
 							wg.Wait()
+							close(sendResult)
+
+							doList := make([]*dataobject.Message, 0, len(sendResult))
+							for val := range sendResult {
+								doList = append(doList, val)
+							}
+							campaignId, _ := strconv.ParseInt(key, 10, 64)
+							tableSharding := mysql_dao.CalMsgTable(campaignId, int64(svcCtx.Config.MsgTableShardingSize))
+							// Persist all results into the database for this campaign
+							err := svcCtx.Dao.MessageDAO.BatchUpdateByIdV2(context.Background(), svcCtx.Dao.DB, tableSharding, doList)
+							if err != nil {
+								// need add service monitor here
+								logx.Errorf("update send result in db: %+v", err)
+							}
 						}
-						close(sendResult)
-
-						// Collect all processing results
-						doList := make([]*dataobject.Message, 0, len(sendResult))
-						for val := range sendResult {
-							doList = append(doList, val)
-						}
-
-						campaignId, _ := strconv.ParseInt(key, 10, 64)
-						tableSharding := mysql_dao.CalMsgTable(campaignId, int64(svcCtx.Config.MsgTableShardingSize))
-
-						// Persist all results into the database
-						//_, err := svcCtx.Dao.MessageDAO.BatchUpdateById(context.Background(), tableSharding, doList, time.Now().Unix())
-						//if err != nil {
-						//	logx.Infof("update send result in db: %+v", err)
-						//}
-
-						// Persist all results into the database for this campaign
-						err := svcCtx.Dao.MessageDAO.BatchUpdateByIdV2(context.Background(), svcCtx.Dao.DB, tableSharding, doList)
-						if err != nil {
-							// need add service monitor here
-							logx.Errorf("update send result in db: %+v", err)
-						}
-					}(msgList, 100) // Process 50 messages per batch
+					}(msgList, 1000) // Process 50 messages per batch
 				}
 			}
 		})

@@ -1,6 +1,6 @@
 Name: camp-mgr
 Host: 0.0.0.0
-Port: 10001
+Port: 10011
 Timeout: 120000
 
 Mysql:

@@ -76,15 +76,29 @@ func (c Camp) AddCamp(req *CampReq) (err error) {
 			return
 		}
 
-		_, _, result.Err = c.svcCtx.Dao.RecipientDAO.InsertOrUpdateBulkTx(tx, recipients)
-		if result.Err != nil {
-			return
+		batchSize := 10000
+		for i := 0; i < len(recipients); i += batchSize {
+			end := i + batchSize
+			if end > len(recipients) {
+				end = len(recipients)
+			}
+
+			_, _, result.Err = c.svcCtx.Dao.RecipientDAO.InsertOrUpdateBulkTx(tx, recipients[i:end])
+			if result.Err != nil {
+				return
+			}
 		}
 
 		shardingSize := int64(c.svcCtx.Config.MsgTableShardingSize)
-		_, _, result.Err = c.svcCtx.Dao.MessageDAO.InsertOrUpdateBulkTx(tx, req.CampaignId, shardingSize, messages)
-		if result.Err != nil {
-			return
+		for i := 0; i < len(messages); i += batchSize {
+			end := i + batchSize
+			if end > len(messages) {
+				end = len(messages)
+			}
+			_, _, result.Err = c.svcCtx.Dao.MessageDAO.InsertOrUpdateBulkTx(tx, req.CampaignId, shardingSize, messages[i:end])
+			if result.Err != nil {
+				return
+			}
 		}
 
 	})
